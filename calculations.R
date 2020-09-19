@@ -44,6 +44,37 @@ lines(mult_pred,lty=3, col="red")
 legend(1,3000,legend=c("Actuals","Additive fit","Multiplicative fit"),lty=1:3,col=c("black","blue","red"))
 
 ##################################################################
+# figure with costs vs MAPE/WAPE
+T=20;Elambda=1:T;sd=0.1;sl=0.8;tta=1/3;n=25;beta=4
+lambda=matrix(rep(Elambda*rnorm(T*n,1,sd),n),nrow=T)
+lambda_hat=Elambda
+costs=rep(0,n)
+for(k in 1:n)for(m in 1:T)costs[k]=costs[k]+abs(ErlangC_Agents(lambda[m,k],beta,sl,tta)-ErlangC_Agents(lambda_hat[m],beta,sl,tta))
+mape=rep(0,n);wape=rep(0,n)
+for(k in 1:n){mape[k]=mean(abs(lambda_hat-lambda[,k])/lambda[,k]);wape[k]=sum(abs(lambda_hat-lambda[,k]))/sum(lambda[,k])}
+par(mfrow=c(1,2))
+plot(costs,wape,xlim=c(0,max(costs)),ylim=c(0,max(c(wape,mape))),ann="FALSE")
+points(costs,mape,pch=4)
+legend(0,max(c(wape,mape)),legend=c("WAPE","MAPE"),pch=c(1,4))
+
+# figure with wWAPE
+wwape=rep(0,n);cu=5;cl=1;q=cu/(cu+cl)
+for(k in 1:n)wwape[k]=2*sum(q*pmax(lambda[,k]-lambda_hat,0)+(1-q)*pmax(lambda_hat-lambda[,k],0))/sum(lambda[,k])
+wcosts=rep(0,n)
+for(k in 1:n)for(m in 1:T)
+  wcosts[k]=wcosts[k]+cu*max(ErlangC_Agents(lambda[m,k],beta,sl,tta)-ErlangC_Agents(lambda_hat[m],beta,sl,tta),0)+
+                      cl*max(ErlangC_Agents(lambda_hat[m],beta,sl,tta)-ErlangC_Agents(lambda[m,k],beta,sl,tta),0)
+plot(wcosts,wwape,xlim=c(0,max(wcosts)),ylim=c(0,max(wwape)),ann="FALSE")
+legend(0,max(wwape),legend=c("median","optimal"),pch=c(1,4))
+lambda_hat=Elambda*qnorm(q,1,sd)
+for(k in 1:n)wwape[k]=2*sum(q*pmax(lambda[,k]-lambda_hat,0)+(1-q)*pmax(lambda_hat-lambda[,k],0))/sum(lambda[,k])
+wcosts=rep(0,n)
+for(k in 1:n)for(m in 1:T)
+  wcosts[k]=wcosts[k]+cu*max(ErlangC_Agents(lambda[m,k],beta,sl,tta)-ErlangC_Agents(lambda_hat[m],beta,sl,tta),0)+
+                      cl*max(ErlangC_Agents(lambda_hat[m],beta,sl,tta)-ErlangC_Agents(lambda[m,k],beta,sl,tta),0)
+points(wcosts,wwape,pch=4)
+
+##################################################################
 # Erlang C formulas
 ErlangB_BlockingProbability = function(s,a)
 {return(dpois(s,a)/ppois(s,a))}
